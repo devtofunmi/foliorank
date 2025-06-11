@@ -25,7 +25,7 @@ export default function LandingPage() {
           transition={{ delay: 0.3 }}
         >
           Submit your portfolio, get real reviews, earn XP, and climb the leaderboard. 
-          It’s like a game—for your growth.
+          It’s like a game for your growth.
         </motion.p>
 
         <motion.div 
