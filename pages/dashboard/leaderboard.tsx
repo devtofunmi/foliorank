@@ -56,10 +56,10 @@ export default function LeaderboardPage() {
 
   return (
     <DashboardLayout>
-      <main className="min-h-screen bg-[#0a0a0a] text-white font-inter px-4 py-16">
+      <main className="min-h-screen bg-[#0a0a0a] text-white font-inter ">
       <div className="max-w-4xl mx-auto text-center mb-12">
         <motion.h1
-          className="text-4xl md:text-6xl font-extrabold text-[#00FFF7] mb-4"
+          className="text-2xl md:text-6xl font-extrabold text-[#00FFF7] mb-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
       {/* Leaderboard List */}
       <motion.div
         key={activeTab}
-        className="bg-[#111111] rounded-2xl shadow-xl p-6 md:p-8 border border-[#2a2a2a] max-w-3xl mx-auto"
+        className="bg-[#111111] rounded-2xl shadow-xl p-6  border border-[#2a2a2a] max-w-3xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
