@@ -31,7 +31,7 @@ type UserProfile = {
 
 const mockUserProfile: UserProfile = {
   id: 1,
-  name: 'Jay',
+  name: 'Tofunmi',
   xp: 1240,
   rank: 12,
   portfolios: [
@@ -88,13 +88,13 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-    <main className="min-h-screen bg-[#0a0a0a] text-white font-inter px-6 py-12 max-w-5xl mx-auto">
+    <main className="min-h-screen bg-[#0a0a0a] text-white font-inter  max-w-5xl mx-auto">
       <motion.h1
-        className="text-4xl font-extrabold text-[#00FFF7] mb-8 text-center"
+        className="text-2xl font-extrabold text-[#00FFF7] mb-8 text-center"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        {user.name}'s Profile
+        {user.name} Profile
       </motion.h1>
 
       {/* XP and Rank */}
