@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 
 type Portfolio = {
@@ -14,39 +14,71 @@ type Portfolio = {
 const mockDatabase: Portfolio[] = []
 
 export default function SubmitPortfolioPage() {
-  const [form, setForm] = useState({
-    title: '',
-    link: '',
-    niche: '',
-    image: '',
-  })
+  const [title, setTitle] = useState('')
+  const [link, setLink] = useState('')
+  const [niche, setNiche] = useState('')
+  const [image, setImage] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const router = useRouter()
+
+  const validateUrl = (url: string) => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
+    setError('')
+    setSuccessMessage('')
+
+    // Basic validations
+    if (!title.trim()) {
+      setError('Title is required')
+      return
+    }
+    if (!link.trim() || !validateUrl(link.trim())) {
+      setError('Please enter a valid URL for the link')
+      return
+    }
+    if (!niche.trim()) {
+      setError('Niche is required')
+      return
+    }
+    if (image.trim() && !validateUrl(image.trim())) {
+      setError('Optional image URL is invalid')
+      return
+    }
+
     setLoading(true)
-    setMessage('')
 
-    // Simulate insert into mock database
     try {
-      await new Promise((res) => setTimeout(res, 1000)) // simulate network delay
+      // Simulate API delay
+      await new Promise((res) => setTimeout(res, 1000))
 
+      // Insert into mock DB
       mockDatabase.push({
-        title: form.title,
-        link: form.link,
-        niche: form.niche,
-        image: form.image || undefined,
+        title: title.trim(),
+        link: link.trim(),
+        niche: niche.trim(),
+        image: image.trim() || undefined,
       })
 
-      setMessage('✅ Portfolio submitted successfully!')
-      setForm({ title: '', link: '', niche: '', image: '' })
+      setSuccessMessage('✅ Portfolio submitted successfully!')
+      setTitle('')
+      setLink('')
+      setNiche('')
+      setImage('')
+
+      // Optionally navigate to dashboard or other page after submission
+      // router.push('/dashboard')
     } catch (err) {
-      setMessage('❌ Error submitting portfolio. Try again.')
+      setError('❌ Error submitting portfolio. Please try again.')
     }
 
     setLoading(false)
@@ -54,83 +86,59 @@ export default function SubmitPortfolioPage() {
 
   return (
     <DashboardLayout>
-      <main className="min-h-screen bg-[#0a0a0a] text-white px-4 py-20 font-inter">
-      <div className="max-w-xl mx-auto bg-[#111] p-8 rounded-2xl border border-white/10 shadow-xl">
-        <motion.h1
-          className="text-3xl font-bold mb-6 text-center text-[#00FFF7]"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          🚀 Submit Your Portfolio
-        </motion.h1>
+      <main className=" bg-[#0a0a0a] text-white flex items-center justify-center px-4  font-inter">
+        <div className="w-full max-w-md">
+          <h1 className="md:text-3xl text-2xl font-bold mb-6 text-center text-[#00FFF7]">
+            🚀 Submit Your Portfolio
+          </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block mb-1 text-sm">Title</label>
-            <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 rounded bg-[#1c1c1c] border border-[#333] text-white"
-              placeholder="My Awesome Portfolio"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Title"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
 
-          <div>
-            <label className="block mb-1 text-sm">Link</label>
-            <input
-              type="url"
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 rounded bg-[#1c1c1c] border border-[#333] text-white"
-              placeholder="https://yourportfolio.com"
-            />
-          </div>
+          <input
+            type="url"
+            placeholder="Link (https://yourportfolio.com)"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+          />
 
-          <div>
-            <label className="block mb-1 text-sm">Niche</label>
-            <input
-              type="text"
-              name="niche"
-              value={form.niche}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 rounded bg-[#1c1c1c] border border-[#333] text-white"
-              placeholder="e.g. UI Design, SaaS, Developer Portfolio"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Niche (e.g. UI Design, SaaS)"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+          />
 
-          <div>
-            <label className="block mb-1 text-sm">Optional Image URL</label>
-            <input
-              type="url"
-              name="image"
-              value={form.image}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded bg-[#1c1c1c] border border-[#333] text-white"
-              placeholder="https://image.url"
-            />
-          </div>
+          <input
+            type="url"
+            placeholder="Optional Image URL"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+          />
+
+          {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
+          {successMessage && (
+            <p className="text-green-400 text-sm mb-3 text-center">{successMessage}</p>
+          )}
 
           <button
-            type="submit"
+            onClick={handleSubmit}
             disabled={loading}
-            className="w-full py-3 bg-[#FF007F] hover:bg-[#e60073] transition rounded font-semibold"
+            className="w-full mt-3 bg-[#FF007F] py-4 rounded-full cursor-pointer font-semibold hover:bg-[#e60073]"
           >
             {loading ? 'Submitting...' : 'Submit Portfolio'}
           </button>
-        </form>
-
-        {message && (
-          <p className="mt-4 text-center text-sm text-zinc-300">{message}</p>
-        )}
-      </div>
-    </main>
+        </div>
+      </main>
     </DashboardLayout>
-    
   )
 }
+
