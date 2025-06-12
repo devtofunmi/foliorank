@@ -46,7 +46,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.6 }}
         >
-          🎮 Rank Up Your Portfolio
+          Rank Up Your Portfolio
         </motion.h1>
 
         <motion.p 
@@ -65,7 +65,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, scale: 1 }} 
           transition={{ delay: 0.5 }}
         >
-          <Link href="/dashboard/dashboard">
+          <Link href="/authentication/signup">
             <button className="px-6 py-3 cursor-pointer rounded-xl font-semibold bg-[#FF007F] hover:bg-[#e60073] transition duration-300 text-white shadow-md">
               🚀 Join FolioRank
             </button>
@@ -139,31 +139,32 @@ export default function LandingPage() {
         <h2 className="text-3xl font-bold text-white mb-12">Top Creators</h2>
 
         <div className="flex flex-wrap gap-6 justify-center">
-          <AvatarCard
-            avatarUrl="https://api.dicebear.com/7.x/thumbs/svg?seed=Ace"
-            username="AceBuilder"
-            rank="🥇 Gold"
-            xp={520}
-            level={4}
-            maxXP={700}
-          />
-          <AvatarCard
-            avatarUrl="https://api.dicebear.com/7.x/thumbs/svg?seed=Nova"
-            username="NovaCode"
-            rank="🥈 Silver"
-            xp={310}
-            level={3}
-            maxXP={400}
-          />
-          <AvatarCard
-            avatarUrl="https://api.dicebear.com/7.x/thumbs/svg?seed=Echo"
-            username="EchoDev"
-            rank="🥉 Bronze"
-            xp={120}
-            level={2}
-            maxXP={200}
-          />
-        </div>
+  <AvatarCard
+    avatarUrl="https://api.dicebear.com/7.x/adventurer/svg?seed=Ace&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7"
+    username="AceBuilder"
+    rank="🥇 Gold"
+    xp={520}
+    level={4}
+    maxXP={700}
+  />
+  <AvatarCard
+    avatarUrl="https://api.dicebear.com/7.x/adventurer/svg?seed=Nova&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7"
+    username="NovaCode"
+    rank="🥈 Silver"
+    xp={310}
+    level={3}
+    maxXP={400}
+  />
+  <AvatarCard
+    avatarUrl="https://api.dicebear.com/7.x/adventurer/svg?seed=Echo&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7"
+    username="EchoDev"
+    rank="🥉 Bronze"
+    xp={120}
+    level={2}
+    maxXP={200}
+  />
+</div>
+
       </section>
 
       {/* CTA Section */}
@@ -177,7 +178,7 @@ export default function LandingPage() {
           Ready to level up your portfolio?
         </motion.h2>
         <p className="text-lg mb-8 font-bold text-black/70">Get feedback, earn XP, and rise to the top.</p>
-        <Link href="/dashboard">
+        <Link href="/authentication/signup">
           <button className="px-6 py-3 cursor-pointer rounded-xl font-semibold bg-black hover:bg-zinc-900 text-white transition duration-300">
             🚀 Get Started Now
           </button>
