@@ -116,9 +116,9 @@ export default function ReviewArenaPage() {
 
   return (
     <DashboardLayout>
-        <main className="min-h-screen bg-[#0a0a0a] text-white font-inter px-4 py-12">
+        <main className="bg-[#0a0a0a] text-white font-inter">
       <motion.h1
-        className="text-center text-4xl font-extrabold text-[#00FFF7] mb-10"
+        className="text-center text-2xl md:text-4xl font-extrabold text-[#00FFF7] mb-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -129,7 +129,7 @@ export default function ReviewArenaPage() {
         <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>
       )}
 
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
+      <div className="max-w-5xl mx-auto flex flex-row gap-8">
         {/* Left Portfolio */}
         {selected.left && (
           <PortfolioCard
