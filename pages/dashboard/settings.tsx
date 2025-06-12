@@ -1,34 +1,55 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import { motion } from 'framer-motion'
 
 type UserSettings = {
   name: string
   email: string
-  theme: 'light' | 'dark'
-  notificationsEnabled: boolean
 }
 
 const mockSettings: UserSettings = {
   name: 'Jane Doe',
   email: 'jane.doe@example.com',
-  theme: 'dark',
-  notificationsEnabled: true,
 }
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [password, setPassword] = useState({ current: '', newPass: '', confirm: '' })
   const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    // Simulate fetch
     setTimeout(() => {
       setSettings(mockSettings)
     }, 400)
   }, [])
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target
+    setSettings((prev) => prev ? { ...prev, [name]: value } : prev)
+  }
+
+  function handlePasswordChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target
+    setPassword((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleSave() {
+    setError('')
+    if (password.newPass !== password.confirm) {
+      setError('❌ Passwords do not match.')
+      return
+    }
+
+    // Simulate save
+    setTimeout(() => {
+      setMessage('✅ Settings updated successfully!')
+      setPassword({ current: '', newPass: '', confirm: '' })
+    }, 500)
+  }
 
   if (!settings) {
     return (
@@ -38,155 +59,75 @@ export default function SettingsPage() {
     )
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value, type } = e.target
-    const checked = (e.target as HTMLInputElement).checked
-    setSettings((prev) =>
-      prev
-        ? {
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-          }
-        : prev
-    )
-  }
-
-  function handlePasswordChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target
-    setPassword((prev) => ({ ...prev, [name]: value }))
-  }
-
-  function handleSaveSettings() {
-    // Validate password change fields
-    if (password.newPass !== password.confirm) {
-      setMessage('New password and confirmation do not match.')
-      return
-    }
-    // Here you would normally send updated data to your backend
-    setMessage('✅ Settings saved successfully!')
-    setPassword({ current: '', newPass: '', confirm: '' })
-  }
-
   return (
     <DashboardLayout>
-        <main className="min-h-screen bg-[#0a0a0a] text-white font-inter px-6 py-12 max-w-4xl mx-auto">
-      <motion.h1
-        className="text-4xl font-extrabold text-[#00FFF7] mb-10 text-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        Settings
-      </motion.h1>
+      <main className="bg-[#0a0a0a] text-white flex items-center justify-center font-inter">
+        <div className="w-full max-w-md p-6">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl font-bold mb-6 text-center text-[#00FFF7]"
+          >
+            Update Your Settings
+          </motion.h1>
 
-      {message && (
-        <p className="mb-6 text-center text-sm text-green-400 dark:text-green-300">{message}</p>
-      )}
-
-      <section className="mb-12 bg-[#111111] p-6 rounded-xl border border-[#222] shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 border-b border-[#333] pb-2">Profile Info</h2>
-        <label className="block mb-3">
-          <span className="text-sm font-semibold mb-1 block">Name</span>
           <input
             type="text"
             name="name"
+            placeholder="Name"
             value={settings.name}
             onChange={handleInputChange}
-            className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold mb-1 block">Email</span>
+
           <input
             type="email"
             name="email"
+            placeholder="Email"
             value={settings.email}
             onChange={handleInputChange}
-            className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
           />
-        </label>
-      </section>
 
-      <section className="mb-12 bg-[#111111] p-6 rounded-xl border border-[#222] shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 border-b border-[#333] pb-2">Change Password</h2>
-        <label className="block mb-3">
-          <span className="text-sm font-semibold mb-1 block">Current Password</span>
           <input
             type="password"
             name="current"
+            placeholder="Current Password"
             value={password.current}
             onChange={handlePasswordChange}
-            className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-            placeholder="••••••••"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
           />
-        </label>
-        <label className="block mb-3">
-          <span className="text-sm font-semibold mb-1 block">New Password</span>
+
           <input
             type="password"
             name="newPass"
+            placeholder="New Password"
             value={password.newPass}
             onChange={handlePasswordChange}
-            className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-            placeholder="••••••••"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold mb-1 block">Confirm New Password</span>
+
           <input
             type="password"
             name="confirm"
+            placeholder="Confirm New Password"
             value={password.confirm}
             onChange={handlePasswordChange}
-            className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-            placeholder="••••••••"
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
           />
-        </label>
-      </section>
 
-      <section className="mb-12 bg-[#111111] p-6 rounded-xl border border-[#222] shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 border-b border-[#333] pb-2">Preferences</h2>
-        <div className="flex flex-col gap-6">
-          {/* Theme selection */}
-          <div>
-            <label className="font-semibold block mb-1">Theme</label>
-            <select
-              name="theme"
-              value={settings.theme}
-              onChange={handleInputChange}
-              className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-            >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </div>
+          {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
+          {message && <p className="text-green-400 text-sm mb-3 text-center">{message}</p>}
 
-          {/* Notifications toggle */}
-          <div className="flex items-center gap-4">
-            <input
-              type="checkbox"
-              id="notifications"
-              name="notificationsEnabled"
-              checked={settings.notificationsEnabled}
-              onChange={handleInputChange}
-              className="w-5 h-5 rounded bg-[#1c1c1c] border border-[#333] accent-[#FF007F]"
-            />
-            <label htmlFor="notifications" className="font-semibold select-none">
-              Enable Notifications
-            </label>
-          </div>
+          <button
+            onClick={handleSave}
+            className="w-full mt-3 bg-[#FF007F] py-3 rounded-full cursor-pointer font-semibold hover:bg-[#e60073] transition"
+          >
+            Save Changes
+          </button>
         </div>
-      </section>
-
-      <div className="text-center">
-        <button
-          onClick={handleSaveSettings}
-          className="px-10 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition"
-        >
-          Save Settings
-        </button>
-      </div>
-    </main>
+      </main>
     </DashboardLayout>
-    
   )
 }
+
