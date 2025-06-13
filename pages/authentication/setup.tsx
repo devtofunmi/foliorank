@@ -57,7 +57,7 @@ export default function SetupPage() {
     })
 
     if (!error) {
-      router.push('/dashboard')
+      router.push('/dashboard/dashboard')
     }
   }
 
@@ -74,7 +74,7 @@ export default function SetupPage() {
 
         <button
           onClick={randomizeAvatar}
-          className="text-sm text-[#00FFF7] hover:underline mb-4"
+          className="text-sm cursor-pointer text-[#00FFF7] hover:underline mb-4"
         >
           🎲 Randomize Avatar
         </button>
