@@ -27,7 +27,7 @@ const mockSupabase = {
   }),
 }
 
-const avatarSeeds = ['froggy', 'jelly', 'rocket', 'paws', 'zappy', 'blink', 'lunar', 'storm']
+const avatarSeeds = ['froggy', 'jelly', 'rocket', 'paws', 'zappy', 'Easton', 'lunar', 'storm']
 const avatarUrls = avatarSeeds.map(
   (seed) =>
     `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7`
