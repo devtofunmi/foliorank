@@ -187,7 +187,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="text-sm text-zinc-500 text-center py-10 bg-[#0a0a0a]">
-        © {new Date().getFullYear()} FolioRank. Built with 💜 by creators for creators.
+        © {new Date().getFullYear()} FolioRank. Built with 💜 by creator for creators.
       </footer>
     </main>
   )
