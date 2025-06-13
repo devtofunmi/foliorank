@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { label: 'My Submissions', href: '/dashboard/submissions', icon: <UserCircle size={18} /> },
     { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: <Trophy size={18} /> },
     { label: 'Review Arena', href: '/dashboard/reviewarena', icon: <Sword size={18} /> },
-    { label: 'Profile Page', href: '/dashboard/profile', icon: <User size={18} /> },
+    { label: 'Profile', href: '/dashboard/profile', icon: <User size={18} /> },
   ]
 
   const handleLogout = () => {
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <nav className="space-y-4">
               {navItems.map(({ label, href, icon }, i) => (
                 <Link href={href} key={i} onClick={() => setSidebarOpen(false)}>
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition cursor-pointer">
+                  <div className="flex items-center text-xl gap-3 px-3 py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
                     {icon}
                     <span>{label}</span>
                   </div>
@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Footer buttons */}
           <div className="space-y-2 border-t border-[#2a2a2a] pt-4">
             <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)}>
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition cursor-pointer">
+              <div className="flex items-center text-xl gap-3 px-3 py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
                 <Settings size={18} />
                 <span>Settings</span>
               </div>
