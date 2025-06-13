@@ -48,7 +48,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex flex-col h-full justify-between p-6">
           {/* Top nav */}
           <div>
-            <h2 className="text-xl font-bold text-[#00FFF7] mb-8">FolioRank</h2>
+            <h2 className="text-xl font-bold gap-3 px-3 py-3 rounded-lg text-[#00FFF7] hover:bg-white/10 cursor-pointer mb-8">
+            <Link href="/">Fol<span className='text-[#FF007F]'>io</span>Rank</Link></h2>
             <nav className="space-y-4">
               {navItems.map(({ label, href, icon }, i) => (
                 <Link href={href} key={i} onClick={() => setSidebarOpen(false)}>
@@ -64,7 +65,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Footer buttons */}
           <div className="space-y-2 border-t border-[#2a2a2a] pt-4">
             <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)}>
-              <div className="flex items-center text-xl gap-3 px-3 py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
+              <div className="flex items-center text-xl gap-3  py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
                 <Settings size={18} />
                 <span>Settings</span>
               </div>
