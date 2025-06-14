@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
 import {
   Menu,
@@ -13,15 +13,53 @@ import {
   User,
   LogOut,
 } from 'lucide-react'
-
-const mockUser = {
-  username: 'Tofunmi',
-  avatar:
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=rocket&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7',
-}
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [username, setUsername] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  const router = useRouter()
+
+  useEffect(() => {
+  const getUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push('/authentication/login')
+      return
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('user_id', user.id)
+      .single()
+
+    console.log('Fetched profile:', profile)
+
+    if (profile) {
+      setUsername(profile.username)
+      setAvatarUrl(
+        profile.avatar_url ||
+        `https://api.dicebear.com/7.x/adventurer/svg?seed=${profile.username}&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7`
+      )
+    } else {
+      console.error('No profile found or error:', error)
+    }
+
+    setLoading(false)
+  }
+
+  getUser()
+}, [router])
+
+
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard/dashboard', icon: <Home size={18} /> },
@@ -31,8 +69,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { label: 'Profile', href: '/dashboard/profile', icon: <User size={18} /> },
   ]
 
-  const handleLogout = () => {
-    alert('Logged out!')
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/authentication/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        Loading...
+      </div>
+    )
   }
 
   return (
@@ -49,7 +96,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Top nav */}
           <div>
             <h2 className="text-xl font-bold gap-3 px-3 py-3 rounded-lg text-[#00FFF7] hover:bg-white/10 cursor-pointer mb-8">
-            <Link href="/">Fol<span className='text-[#FF007F]'>io</span>Rank</Link></h2>
+              <Link href="/">Fol<span className='text-[#FF007F]'>io</span>Rank</Link>
+            </h2>
             <nav className="space-y-4">
               {navItems.map(({ label, href, icon }, i) => (
                 <Link href={href} key={i} onClick={() => setSidebarOpen(false)}>
@@ -103,9 +151,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <h2 className="text-lg font-semibold">FolioRank Dashboard</h2>
 
           <div className="flex items-center gap-3 px-3 py-1 rounded-lg bg-[#1c1c1c] border border-[#2a2a2a]">
-            <span className="hidden font-bold sm:block text-sm">{mockUser.username}</span>
+            <span className="hidden font-bold sm:block text-sm">{username}</span>
             <img
-              src={mockUser.avatar}
+              src={avatarUrl}
               alt="User Avatar"
               className="w-9 h-9 rounded-full object-cover border border-white/20"
             />
