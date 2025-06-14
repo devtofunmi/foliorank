@@ -3,38 +3,27 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-type LoginParams = { email: string; password: string }
-type LoginResponse = { error: { message: string } | null }
-
-const mockSupabase = {
-  auth: {
-    signInWithPassword: async ({ email, password }: LoginParams): Promise<LoginResponse> => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          if (email === 'test@gmail.com' && password === 'password') {
-            resolve({ error: null })
-          } else {
-            resolve({ error: { message: 'Invalid credentials' } })
-          }
-        }, 500)
-      })
-    },
-  },
-}
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState<string>('')
-  const [password, setPassword] = useState<string>('')
-  const [error, setError] = useState<string>('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const router = useRouter()
 
+  const isDisabled = email.trim() === '' || password.trim() === '' || loading
+
   const handleLogin = async () => {
-    const { error } = await mockSupabase.auth.signInWithPassword({ email, password })
+    setError('')
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
+      setLoading(false)
     } else {
       router.push('/dashboard/dashboard')
     }
@@ -64,16 +53,21 @@ export default function LoginPage() {
 
         <button
           onClick={handleLogin}
-          className="w-full mt-3 bg-[#FF007F] py-3 rounded-full cursor-pointer font-semibold hover:bg-[#e60073]"
+          disabled={isDisabled}
+          className={`w-full mt-3 py-3 rounded-full font-semibold transition ${
+            isDisabled
+              ? 'bg-[#555] cursor-not-allowed'
+              : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
+          }`}
         >
-          Log In
+          {loading ? 'Logging in...' : 'Log In'}
         </button>
 
         <p className="text-center mt-5 text-sm text-gray-400">
           Don't have an account?{' '}
-          <span className="hover:underline hover:text-white">
-            <Link href="/authentication/signup">Sign Up</Link>
-          </span>
+          <Link href="/authentication/signup" className="hover:underline hover:text-white">
+            Sign Up
+          </Link>
         </p>
       </div>
     </main>
