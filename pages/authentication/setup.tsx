@@ -1,31 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
-
-// Mock Supabase logic
-type User = { id: string }
-type MockAuthResponse = { data: { user: User | null } }
-type MockInsertResponse = { error: { message: string } | null }
-
-const mockSupabase = {
-  auth: {
-    getUser: async (): Promise<MockAuthResponse> => {
-      return new Promise((resolve) =>
-        setTimeout(() => resolve({ data: { user: { id: 'mock-user-id' } } }), 300)
-      )
-    },
-  },
-  from: (_: string) => ({
-    insert: async (_: Record<string, any>): Promise<MockInsertResponse> => {
-      return new Promise((resolve) =>
-        setTimeout(() => resolve({ error: null }), 500)
-      )
-    },
-  }),
-}
+import { supabase } from '@/lib/supabase'
 
 const avatarSeeds = ['froggy', 'jelly', 'rocket', 'paws', 'zappy', 'Easton', 'lunar', 'storm']
 const avatarUrls = avatarSeeds.map(
@@ -34,8 +13,11 @@ const avatarUrls = avatarSeeds.map(
 )
 
 export default function SetupPage() {
-  const [username, setUsername] = useState<string>('')
+  const [username, setUsername] = useState('')
   const [selectedAvatar, setSelectedAvatar] = useState<string>(avatarUrls[0])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const router = useRouter()
 
   const randomizeAvatar = () => {
@@ -44,22 +26,51 @@ export default function SetupPage() {
   }
 
   const saveProfile = async () => {
-    const {
-      data: { user },
-    } = await mockSupabase.auth.getUser()
+    setLoading(true)
+    setError('')
+    setSuccess('')
 
-    if (!user) return
+    // 1. Get authenticated user
+    const { data: userData, error: userError } = await supabase.auth.getUser()
 
-    const { error } = await mockSupabase.from('profiles').insert({
-      user_id: user.id,
+    if (userError || !userData?.user?.id) {
+      setError('Unable to fetch user info')
+      setLoading(false)
+      return
+    }
+
+    const userId = userData.user.id
+
+    // 2. Optional: Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (existingProfile) {
+      setError('Profile already exists. Redirecting...')
+      setTimeout(() => router.push('/dashboard/dashboard'), 1500)
+      return
+    }
+
+    // 3. Insert profile
+    const { error: insertError } = await supabase.from('profiles').insert({
+      user_id: userId,
       username,
       avatar_url: selectedAvatar,
     })
 
-    if (!error) {
-      router.push('/dashboard/dashboard')
+    if (insertError) {
+      setError(insertError.message)
+      setLoading(false)
+    } else {
+      setSuccess('Profile saved! Redirecting...')
+      setTimeout(() => router.push('/dashboard/dashboard'), 1500)
     }
   }
+
+  const isDisabled = username.trim().length < 3 || loading
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center px-4">
@@ -121,11 +132,19 @@ export default function SetupPage() {
           onChange={(e) => setUsername(e.target.value)}
         />
 
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+        {success && <p className="text-green-500 text-sm mb-2">{success}</p>}
+
         <button
           onClick={saveProfile}
-          className="w-full mt-3 bg-[#FF007F] py-3 rounded-full cursor-pointer font-semibold hover:bg-[#e60073]"
+          disabled={isDisabled}
+          className={`w-full mt-3 py-3 rounded-full font-semibold transition ${
+            isDisabled
+              ? 'bg-[#555] cursor-not-allowed'
+              : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
+          }`}
         >
-          Save & Continue
+          {loading ? 'Saving...' : 'Save & Continue'}
         </button>
       </div>
     </main>
