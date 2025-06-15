@@ -21,6 +21,8 @@ export default function SubmitPortfolioPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const isDisabled = title.trim() === '' || link.trim() === '' || niche.trim() === '' || image.trim() === '' || loading
+
 
   const router = useRouter()
 
@@ -131,8 +133,12 @@ export default function SubmitPortfolioPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="w-full mt-3 bg-[#FF007F] py-4 rounded-full cursor-pointer font-semibold hover:bg-[#e60073]"
+            disabled={isDisabled}
+            className={`w-full mt-3 py-3 rounded-full font-semibold transition ${
+            isDisabled
+              ? 'bg-[#555] cursor-not-allowed'
+              : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
+          }`}
           >
             {loading ? 'Submitting...' : 'Submit Portfolio'}
           </button>
