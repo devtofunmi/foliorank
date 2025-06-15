@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard/dashboard', icon: <Home size={18} /> },
-    { label: 'My Submissions', href: '/dashboard/submissions', icon: <UserCircle size={18} /> },
+    { label: 'My Submissions', href: '/dashboard/usersubmissions', icon: <UserCircle size={18} /> },
     { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: <Trophy size={18} /> },
     { label: 'Review Arena', href: '/dashboard/reviewarena', icon: <Sword size={18} /> },
     { label: 'Profile', href: '/dashboard/profile', icon: <User size={18} /> },
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Footer buttons */}
           <div className="space-y-2 border-t border-[#2a2a2a] pt-4">
             <Link href="/dashboard/settings" onClick={() => setSidebarOpen(false)}>
-              <div className="flex items-center text-xl gap-3  py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
+              <div className="flex items-center text-xl gap-3 px-3 py-3 rounded-lg hover:bg-white/10 transition cursor-pointer">
                 <Settings size={18} />
                 <span>Settings</span>
               </div>
@@ -148,9 +148,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
 
-          <h2 className="text-lg font-semibold">FolioRank Dashboard</h2>
+          <h2 className="text-lg font-semibold"></h2>
+          <div className="flex items-center gap-3">
+             <div className="px-3 py-1 rounded-lg bg-[#1c1c1c] border border-[#2a2a2a]">
+              <button  className='text-white cursor-pointer'><Link href={"/dashboard/submissions"}>Submit</Link></button>
+          </div>
+
 
           <div className="flex items-center gap-3 px-3 py-1 rounded-lg bg-[#1c1c1c] border border-[#2a2a2a]">
+
             <span className="hidden font-bold sm:block text-sm">{username}</span>
             <img
               src={avatarUrl}
@@ -158,6 +164,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="w-9 h-9 rounded-full object-cover border border-white/20"
             />
           </div>
+          </div>
+         
         </header>
 
         {/* Page Content */}
