@@ -17,7 +17,12 @@ type Portfolio = {
 export default function UserPortfolios() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editData, setEditData] = useState<{ title: string; link: string; niche: string }>({
+    title: '',
+    link: '',
+    niche: '',
+  })
 
   const router = useRouter()
 
@@ -32,8 +37,6 @@ export default function UserPortfolios() {
         router.push('/authentication/login')
         return
       }
-
-      setUserId(user.id)
 
       const { data, error } = await supabase
         .from('portfolios')
@@ -50,6 +53,48 @@ export default function UserPortfolios() {
 
     fetchPortfolios()
   }, [router])
+
+  const handleDelete = async (id: number) => {
+    const confirm = window.confirm('Are you sure you want to delete this portfolio?')
+    if (!confirm) return
+
+    const { error } = await supabase.from('portfolios').delete().eq('id', id)
+
+    if (!error) {
+      setPortfolios((prev) => prev.filter((p) => p.id !== id))
+    }
+  }
+
+  const handleEdit = (portfolio: Portfolio) => {
+    setEditingId(portfolio.id)
+    setEditData({
+      title: portfolio.title,
+      link: portfolio.link,
+      niche: portfolio.niche,
+    })
+  }
+
+  const handleEditChange = (field: keyof typeof editData, value: string) => {
+    setEditData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleUpdate = async (id: number) => {
+    const { error } = await supabase
+      .from('portfolios')
+      .update({
+        title: editData.title.trim(),
+        link: editData.link.trim(),
+        niche: editData.niche.trim(),
+      })
+      .eq('id', id)
+
+    if (!error) {
+      setPortfolios((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...editData } : p))
+      )
+      setEditingId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -77,26 +122,76 @@ export default function UserPortfolios() {
                 key={portfolio.id}
                 className="p-4 border border-[#2a2a2a] bg-[#111] rounded-lg"
               >
-                <h3 className="text-lg font-semibold">{portfolio.title}</h3>
-                <p className="text-sm text-gray-400 mt-1">{portfolio.niche}</p>
-                <a
-                  href={portfolio.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[#00FFF7] underline block mt-2"
-                >
-                  Visit Project ↗
-                </a>
-                {portfolio.image && (
-                  <img
-                    src={portfolio.image}
-                    alt={portfolio.title}
-                    className="w-full max-h-48 object-cover rounded mt-4"
-                  />
+                {editingId === portfolio.id ? (
+                  <>
+                    <input
+                      value={editData.title}
+                      onChange={(e) => handleEditChange('title', e.target.value)}
+                      className="w-full p-2 rounded bg-[#1c1c1c] border border-[#333] text-white mb-2"
+                    />
+                    <input
+                      value={editData.link}
+                      onChange={(e) => handleEditChange('link', e.target.value)}
+                      className="w-full p-2 rounded bg-[#1c1c1c] border border-[#333] text-white mb-2"
+                    />
+                    <input
+                      value={editData.niche}
+                      onChange={(e) => handleEditChange('niche', e.target.value)}
+                      className="w-full p-2 rounded bg-[#1c1c1c] border border-[#333] text-white mb-2"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleUpdate(portfolio.id)}
+                        className="bg-green-600 cursor-pointer hover:bg-green-700 px-3 py-1 rounded text-sm"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="bg-gray-600 cursor-pointer hover:bg-gray-700 px-3 py-1 rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-semibold">{portfolio.title}</h3>
+                    <p className="text-sm text-gray-400 mt-1">{portfolio.niche}</p>
+                    <a
+                      href={portfolio.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#00FFF7] underline block mt-2"
+                    >
+                      Visit Project ↗
+                    </a>
+                    {portfolio.image && (
+                      <img
+                        src={portfolio.image}
+                        alt={portfolio.title}
+                        className="w-full max-h-48 object-cover rounded mt-4"
+                      />
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Submitted on {new Date(portfolio.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="flex gap-3 mt-3">
+                      <button
+                        onClick={() => handleEdit(portfolio)}
+                        className="bg-yellow-600 cursor-pointer hover:bg-yellow-700 px-3 py-1 rounded text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(portfolio.id)}
+                        className="bg-red-600 cursor-pointer hover:bg-red-700 px-3 py-1 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Submitted on {new Date(portfolio.created_at).toLocaleDateString()}
-                </p>
               </div>
             ))}
           </div>
