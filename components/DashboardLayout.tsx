@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       .eq('user_id', user.id)
       .single()
 
-    console.log('Fetched profile:', profile)
+    // console.log('Fetched profile:', profile)
 
     if (profile) {
       setUsername(profile.username)
