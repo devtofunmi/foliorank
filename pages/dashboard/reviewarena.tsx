@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import DashboardLayout from '@/components/DashboardLayout'
+import { supabase } from '@/lib/supabase'
 
 type Portfolio = {
   id: number
@@ -12,76 +13,53 @@ type Portfolio = {
   image?: string | null
 }
 
-// Mock portfolio data
-const MOCK_PORTFOLIOS: Portfolio[] = [
-  {
-    id: 1,
-    title: 'Creative Minds',
-    link: 'https://creativeminds.dev',
-    niche: 'Design Agency',
-    image: 'https://placehold.co/600x400/png?text=Creative+Minds',
-  },
-  {
-    id: 2,
-    title: 'Techie Blog',
-    link: 'https://techieblog.com',
-    niche: 'Tech Blog',
-    image: null,
-  },
-  {
-    id: 3,
-    title: 'ShopSmart',
-    link: 'https://shopsmart.io',
-    niche: 'E-commerce',
-    image: 'https://placehold.co/600x400/png?text=ShopSmart',
-  },
-  {
-    id: 4,
-    title: 'Fitness Pro',
-    link: 'https://fitnesspro.app',
-    niche: 'Health & Fitness',
-    image: null,
-  },
-  {
-    id: 5,
-    title: 'Travel Tales',
-    link: 'https://traveltales.co',
-    niche: 'Travel Blog',
-    image: 'https://placehold.co/600x400/png?text=Travel+Tales',
-  },
-]
-
 export default function ReviewArenaPage() {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(MOCK_PORTFOLIOS)
   const [selected, setSelected] = useState<{ left?: Portfolio; right?: Portfolio }>({})
   const [scoreLeft, setScoreLeft] = useState<number | null>(null)
   const [scoreRight, setScoreRight] = useState<number | null>(null)
   const [feedback, setFeedback] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [previousIds, setPreviousIds] = useState<number[]>([])
 
-  // Pick two random distinct portfolios from mock data
-  function fetchTwoPortfolios() {
-    if (MOCK_PORTFOLIOS.length < 2) {
-      setMessage('Not enough portfolios to review.')
+  async function fetchTwoPortfolios(prevIds: number[] = []) {
+    setLoading(true)
+    const { data: portfolios, error } = await supabase
+      .from('portfolios')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error || !portfolios || portfolios.length < 2) {
+      setMessage('Not enough portfolios available for review.')
+      setLoading(false)
       return
     }
-    let leftIndex = Math.floor(Math.random() * MOCK_PORTFOLIOS.length)
-    let rightIndex = Math.floor(Math.random() * MOCK_PORTFOLIOS.length)
 
-    // Ensure distinct portfolios
-    while (rightIndex === leftIndex) {
-      rightIndex = Math.floor(Math.random() * MOCK_PORTFOLIOS.length)
+    const filtered = portfolios.filter(p => !prevIds.includes(p.id))
+
+    if (filtered.length < 2) {
+      setMessage('⚠️ Not enough new portfolios available. Showing from previous pool.')
     }
 
-    setSelected({
-      left: MOCK_PORTFOLIOS[leftIndex],
-      right: MOCK_PORTFOLIOS[rightIndex],
-    })
+    const pool = filtered.length >= 2 ? filtered : portfolios
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+
+    const left = shuffled[0]
+    let right = shuffled[1]
+
+    if (left.id === right.id && shuffled.length > 2) {
+      right = shuffled[2]
+    }
+
+    setSelected({ left, right })
     setScoreLeft(null)
     setScoreRight(null)
     setFeedback('')
     setMessage('')
+    setPreviousIds([left.id, right.id])
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -89,95 +67,168 @@ export default function ReviewArenaPage() {
   }, [])
 
   const handleSubmitReview = async () => {
-    if (
-      !selected.left ||
-      !selected.right ||
-      scoreLeft === null ||
-      scoreRight === null ||
-      feedback.trim() === ''
-    ) {
-      setMessage('Please provide scores for both portfolios and leave feedback.')
-      return
-    }
+  if (
+    !selected.left ||
+    !selected.right ||
+    scoreLeft === null ||
+    scoreRight === null ||
+    feedback.trim() === ''
+  ) {
+    setMessage('Please provide scores for both portfolios and leave feedback.')
+    return
+  }
 
-    setSubmitting(true)
-    setMessage('')
+  setSubmitting(true)
+  setMessage('')
 
-    // Simulate async submission delay
-    await new Promise((r) => setTimeout(r, 1000))
+  const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null
 
-    // Here, instead of inserting into DB, just show success message
-    setMessage('✅ Review submitted! XP earned 🎉')
+  if (!user) {
+    setMessage('⚠️ You must be logged in to submit a review.')
     setSubmitting(false)
+    return
+  }
 
-    // Load new portfolios to review
-    fetchTwoPortfolios()
+  // Step 1: Count reviews submitted today
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  const { count: reviewCountToday } = await supabase
+    .from('reviews')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', todayStart.toISOString())
+
+  // Step 2: XP Calculation
+  let xp = 0
+  const trimmedFeedback = feedback.trim()
+
+  if (trimmedFeedback.length > 300) xp += 30
+  else if (trimmedFeedback.length > 150) xp += 20
+  else if (trimmedFeedback.length > 50) xp += 10
+
+  if (scoreLeft !== null && scoreRight !== null) xp += 10
+
+  const todayCount = reviewCountToday ?? 0
+  if (todayCount <= 3) xp += 10
+  else if (todayCount <= 5) xp += 5
+
+  // Step 3: Insert review
+  const { error: reviewError } = await supabase.from('reviews').insert({
+    user_id: user.id,
+    left_portfolio_id: selected.left.id,
+    right_portfolio_id: selected.right.id,
+    score_left: scoreLeft,
+    score_right: scoreRight,
+    feedback: trimmedFeedback,
+    xp: xp,
+  })
+
+  if (reviewError) {
+    console.error('Review insert error:', reviewError)
+    setMessage('❌ Failed to submit review.')
+    setSubmitting(false)
+    return
+  }
+
+  // Step 4: Update user XP in profiles table using RPC
+  const { error: updateError } = await supabase.rpc('increment_xp', {
+    uid: user.id,
+    points: xp,
+  })
+
+  if (updateError) {
+    console.error("XP RPC error:", updateError)
+    setMessage('✅ Review submitted, but failed to update XP.')
+  } else {
+    setMessage(`✅ Review submitted! You earned ${xp} XP 🎉`)
+  }
+
+  setSubmitting(false)
+  fetchTwoPortfolios([selected.left.id, selected.right.id]) // Avoid showing same pair again
+}
+
+
+
+  const handleSkip = () => {
+    fetchTwoPortfolios(previousIds)
   }
 
   return (
     <DashboardLayout>
-        <main className="bg-[#0a0a0a] text-white font-inter">
-      <motion.h1
-        className="text-center text-2xl md:text-4xl font-extrabold text-[#00FFF7] mb-10"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        ⚔️ Review Arena
-      </motion.h1>
-
-      {message && (
-        <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>
-      )}
-
-      <div className="max-w-5xl mx-auto flex flex-row gap-8">
-        {/* Left Portfolio */}
-        {selected.left && (
-          <PortfolioCard
-            portfolio={selected.left}
-            score={scoreLeft}
-            onScoreChange={setScoreLeft}
-            side="left"
-          />
-        )}
-
-        {/* Right Portfolio */}
-        {selected.right && (
-          <PortfolioCard
-            portfolio={selected.right}
-            score={scoreRight}
-            onScoreChange={setScoreRight}
-            side="right"
-          />
-        )}
-      </div>
-
-      {/* Feedback */}
-      <div className="max-w-5xl mx-auto mt-10">
-        <label htmlFor="feedback" className="block mb-2 text-sm font-semibold">
-          Leave your feedback and thoughts
-        </label>
-        <textarea
-          id="feedback"
-          rows={4}
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-          placeholder="What did you like or dislike about these portfolios?"
-        />
-      </div>
-
-      <div className="max-w-5xl mx-auto text-center mt-8">
-        <button
-          onClick={handleSubmitReview}
-          disabled={submitting}
-          className="px-8 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
+      <main className="bg-[#0a0a0a] text-white font-inter min-h-screen">
+        <motion.h1
+          className="text-center text-2xl md:text-4xl font-extrabold text-[#00FFF7] mb-10"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          {submitting ? 'Submitting...' : 'Submit Review & Earn XP'}
-        </button>
-      </div>
-    </main>
+          ⚔️ Review Arena
+        </motion.h1>
+
+        {message && (
+          <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>
+        )}
+
+        {loading ? (
+          <p className="text-center text-zinc-400">Loading portfolios...</p>
+        ) : (
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
+            {selected.left && (
+              <PortfolioCard
+                portfolio={selected.left}
+                score={scoreLeft}
+                onScoreChange={setScoreLeft}
+                side="left"
+              />
+            )}
+            {selected.right && (
+              <PortfolioCard
+                portfolio={selected.right}
+                score={scoreRight}
+                onScoreChange={setScoreRight}
+                side="right"
+              />
+            )}
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            <div className="max-w-5xl mx-auto mt-10">
+              <label htmlFor="feedback" className="block mb-2 text-sm font-semibold">
+                Leave your feedback and thoughts
+              </label>
+              <textarea
+                id="feedback"
+                rows={4}
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+                placeholder="What did you like or dislike about these portfolios?"
+              />
+            </div>
+
+            <div className="max-w-5xl mx-auto text-center mt-8 flex justify-center gap-4">
+              <button
+                onClick={handleSubmitReview}
+                disabled={submitting}
+                className="px-6 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
+              >
+                {submitting ? 'Submitting...' : 'Submit Review & Earn XP'}
+              </button>
+
+              <button
+                onClick={handleSkip}
+                disabled={loading}
+                className="px-6 py-3 bg-[#333] rounded-xl font-semibold text-white hover:bg-[#444] transition disabled:opacity-50"
+              >
+                Skip This Pair
+              </button>
+            </div>
+          </>
+        )}
+      </main>
     </DashboardLayout>
-    
   )
 }
 
@@ -188,7 +239,7 @@ type PortfolioCardProps = {
   side: 'left' | 'right'
 }
 
-function PortfolioCard({ portfolio, score, onScoreChange, side }: PortfolioCardProps) {
+function PortfolioCard({ portfolio, score, onScoreChange }: PortfolioCardProps) {
   return (
     <motion.div
       className="flex-1 bg-[#111111] rounded-2xl p-6 border border-[#2a2a2a] shadow-lg flex flex-col"
@@ -219,8 +270,7 @@ function PortfolioCard({ portfolio, score, onScoreChange, side }: PortfolioCardP
       </a>
       <p className="text-zinc-400 italic mb-6">Niche: {portfolio.niche}</p>
 
-      {/* Score input */}
-      <label className="block mb-1 font-semibold">Your Score (0-10):</label>
+      <label className="block mb-1 font-semibold">Your Score (0–10):</label>
       <input
         type="number"
         min={0}
