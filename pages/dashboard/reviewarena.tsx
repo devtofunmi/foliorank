@@ -132,6 +132,7 @@ export default function ReviewArenaPage() {
   }
 
   // Step 4: Update user XP in profiles table using RPC
+if (user?.id) {
   const { error: updateError } = await supabase.rpc('increment_xp', {
     uid: user.id,
     points: xp,
@@ -143,12 +144,14 @@ export default function ReviewArenaPage() {
   } else {
     setMessage(`✅ Review submitted! You earned ${xp} XP 🎉`)
   }
+  } else {
+    console.warn("User ID not found for XP update.")
+    setMessage('✅ Review submitted, but no XP awarded due to user issue.')
+  }
 
   setSubmitting(false)
-  fetchTwoPortfolios([selected.left.id, selected.right.id]) // Avoid showing same pair again
+  fetchTwoPortfolios(previousIds)
 }
-
-
 
   const handleSkip = () => {
     fetchTwoPortfolios(previousIds)
