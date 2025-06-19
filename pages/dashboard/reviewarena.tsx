@@ -17,7 +17,8 @@ export default function ReviewArenaPage() {
   const [selected, setSelected] = useState<{ left?: Portfolio; right?: Portfolio }>({})
   const [scoreLeft, setScoreLeft] = useState<number | null>(null)
   const [scoreRight, setScoreRight] = useState<number | null>(null)
-  const [feedback, setFeedback] = useState('')
+  const [leftFeedback, setLeftFeedback] = useState('')
+  const [rightFeedback, setRightFeedback] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
@@ -82,7 +83,8 @@ export default function ReviewArenaPage() {
     setSelected({ left, right })
     setScoreLeft(null)
     setScoreRight(null)
-    setFeedback('')
+    setLeftFeedback('')
+    setRightFeedback('')
     setMessage('')
     setPreviousIds([left.id, right.id])
     setLoading(false)
@@ -98,9 +100,10 @@ export default function ReviewArenaPage() {
       !selected.right ||
       scoreLeft === null ||
       scoreRight === null ||
-      feedback.trim() === ''
+      leftFeedback.trim() === '' ||
+      rightFeedback.trim() === ''
     ) {
-      setMessage('Please provide scores for both portfolios and leave feedback.')
+      setMessage('Please score and give feedback for both portfolios.')
       return
     }
 
@@ -126,16 +129,18 @@ export default function ReviewArenaPage() {
       .gte('created_at', todayStart.toISOString())
 
     let xp = 0
-    const trimmedFeedback = feedback.trim()
-    if (trimmedFeedback.length > 300) xp += 30
-    else if (trimmedFeedback.length > 150) xp += 20
-    else if (trimmedFeedback.length > 50) xp += 10
+    const lfb = leftFeedback.trim()
+    const rfb = rightFeedback.trim()
 
-    if (scoreLeft !== null && scoreRight !== null) xp += 10
+    if (lfb.length > 300) xp += 20
+    else if (lfb.length > 150) xp += 15
+    else if (lfb.length > 50) xp += 10
 
-    const todayCount = reviewCountToday ?? 0
-    if (todayCount <= 3) xp += 10
-    else if (todayCount <= 5) xp += 5
+    if (rfb.length > 300) xp += 20
+    else if (rfb.length > 150) xp += 15
+    else if (rfb.length > 50) xp += 10
+
+    xp += 10
 
     const { error: reviewError } = await supabase.from('reviews').insert({
       user_id: user.id,
@@ -143,8 +148,9 @@ export default function ReviewArenaPage() {
       right_portfolio_id: selected.right.id,
       score_left: scoreLeft,
       score_right: scoreRight,
-      feedback: trimmedFeedback,
-      xp: xp,
+      feedback_left: lfb,
+      feedback_right: rfb,
+      xp,
     })
 
     if (reviewError) {
@@ -200,9 +206,7 @@ export default function ReviewArenaPage() {
           ⚔️ Review Arena
         </motion.h1>
 
-        {message && (
-          <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>
-        )}
+        {message && <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>}
 
         {loading ? (
           <p className="text-center text-zinc-400">Loading portfolios...</p>
@@ -213,6 +217,8 @@ export default function ReviewArenaPage() {
                 portfolio={selected.left}
                 score={scoreLeft}
                 onScoreChange={setScoreLeft}
+                feedback={leftFeedback}
+                onFeedbackChange={setLeftFeedback}
                 side="left"
               />
             )}
@@ -221,6 +227,8 @@ export default function ReviewArenaPage() {
                 portfolio={selected.right}
                 score={scoreRight}
                 onScoreChange={setScoreRight}
+                feedback={rightFeedback}
+                onFeedbackChange={setRightFeedback}
                 side="right"
               />
             )}
@@ -228,39 +236,22 @@ export default function ReviewArenaPage() {
         )}
 
         {!loading && !hideReviewUI && (
-          <>
-            <div className="max-w-5xl mx-auto mt-10">
-              <label htmlFor="feedback" className="block mb-2 text-sm font-semibold">
-                Leave your feedback and thoughts
-              </label>
-              <textarea
-                id="feedback"
-                rows={4}
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
-                placeholder="What did you like or dislike about these portfolios?"
-              />
-            </div>
-
-            <div className="max-w-5xl mx-auto text-center mt-8 flex justify-center gap-4">
-              <button
-                onClick={handleSubmitReview}
-                disabled={submitting}
-                className="px-6 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
-              >
-                {submitting ? 'Submitting...' : 'Submit Review & Earn XP'}
-              </button>
-
-              <button
-                onClick={handleSkip}
-                disabled={loading}
-                className="px-6 py-3 bg-[#333] rounded-xl font-semibold text-white hover:bg-[#444] transition disabled:opacity-50"
-              >
-                Skip This Pair
-              </button>
-            </div>
-          </>
+          <div className="max-w-5xl mx-auto text-center mt-8 flex justify-center gap-4">
+            <button
+              onClick={handleSubmitReview}
+              disabled={submitting}
+              className="px-6 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
+            >
+              {submitting ? 'Submitting...' : 'Submit Review & Earn XP'}
+            </button>
+            <button
+              onClick={handleSkip}
+              disabled={loading}
+              className="px-6 py-3 bg-[#333] rounded-xl font-semibold text-white hover:bg-[#444] transition disabled:opacity-50"
+            >
+              Skip This Pair
+            </button>
+          </div>
         )}
       </main>
     </DashboardLayout>
@@ -271,10 +262,12 @@ type PortfolioCardProps = {
   portfolio: Portfolio
   score: number | null
   onScoreChange: (score: number) => void
+  feedback: string
+  onFeedbackChange: (text: string) => void
   side: 'left' | 'right'
 }
 
-function PortfolioCard({ portfolio, score, onScoreChange }: PortfolioCardProps) {
+function PortfolioCard({ portfolio, score, onScoreChange, feedback, onFeedbackChange, side }: PortfolioCardProps) {
   return (
     <motion.div
       className="flex-1 bg-[#111111] rounded-2xl p-6 border border-[#2a2a2a] shadow-lg flex flex-col"
@@ -292,7 +285,6 @@ function PortfolioCard({ portfolio, score, onScoreChange }: PortfolioCardProps) 
           {portfolio.title[0]}
         </div>
       )}
-
       <h2 className="text-xl font-semibold mb-1">{portfolio.title}</h2>
       <a
         href={portfolio.link}
@@ -303,7 +295,7 @@ function PortfolioCard({ portfolio, score, onScoreChange }: PortfolioCardProps) 
       >
         {portfolio.link}
       </a>
-      <p className="text-zinc-400 italic mb-6">Niche: {portfolio.niche}</p>
+      <p className="text-zinc-400 italic mb-4">Niche: {portfolio.niche}</p>
 
       <label className="block mb-1 font-semibold">Your Score (0–10):</label>
       <input
@@ -312,7 +304,16 @@ function PortfolioCard({ portfolio, score, onScoreChange }: PortfolioCardProps) 
         max={10}
         value={score ?? ''}
         onChange={(e) => onScoreChange(Number(e.target.value))}
-        className="w-full px-3 py-2 rounded bg-[#1c1c1c] border border-[#333] text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+        className="w-full px-3 py-2 mb-4 rounded bg-[#1c1c1c] border border-[#333] text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+      />
+
+      <label className="block mb-1 font-semibold">Your Feedback:</label>
+      <textarea
+        rows={3}
+        value={feedback}
+        onChange={(e) => onFeedbackChange(e.target.value)}
+        className="w-full rounded bg-[#1c1c1c] border border-[#333] p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+        placeholder={`What do you think about the ${side} portfolio?`}
       />
     </motion.div>
   )
