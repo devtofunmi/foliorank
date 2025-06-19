@@ -23,6 +23,7 @@ export default function ReviewArenaPage() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [previousIds, setPreviousIds] = useState<number[]>([])
+  const [reviewCountToday, setReviewCountToday] = useState(0)
 
   async function fetchTwoPortfolios(prevIds: number[] = []) {
     setLoading(true)
@@ -35,6 +36,17 @@ export default function ReviewArenaPage() {
       setLoading(false)
       return
     }
+
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const { count: reviewCountToday } = await supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', todayStart.toISOString())
+
+    setReviewCountToday(reviewCountToday || 0)
 
     const { data: reviewed } = await supabase
       .from('reviews')
@@ -107,6 +119,11 @@ export default function ReviewArenaPage() {
       return
     }
 
+    if (reviewCountToday >= 10) {
+      setMessage('⚠️ You have reached your daily review limit. Try again tomorrow.')
+      return
+    }
+
     setSubmitting(true)
     setMessage('')
 
@@ -118,15 +135,6 @@ export default function ReviewArenaPage() {
       setSubmitting(false)
       return
     }
-
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-
-    const { count: reviewCountToday } = await supabase
-      .from('reviews')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', todayStart.toISOString())
 
     let xp = 0
     const lfb = leftFeedback.trim()
@@ -193,7 +201,7 @@ export default function ReviewArenaPage() {
     fetchTwoPortfolios(previousIds)
   }
 
-  const hideReviewUI = message.includes('Not enough portfolios') || message.includes('Try again later')
+  const hideReviewUI = message.includes('Not enough portfolios') || message.includes('Try again later') || message.includes('daily review limit')
 
   return (
     <DashboardLayout>
