@@ -25,22 +25,46 @@ export default function ReviewArenaPage() {
 
   async function fetchTwoPortfolios(prevIds: number[] = []) {
     setLoading(true)
-    const { data: portfolios, error } = await supabase
-      .from('portfolios')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50)
 
-    if (error || !portfolios || portfolios.length < 2) {
-      setMessage('Not enough portfolios available for review.')
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    const user = userData?.user
+
+    if (userError || !user) {
+      setMessage('⚠️ You must be logged in to review portfolios.')
       setLoading(false)
       return
     }
 
-    const filtered = portfolios.filter(p => !prevIds.includes(p.id))
+    const { data: reviewed } = await supabase
+      .from('reviews')
+      .select('left_portfolio_id, right_portfolio_id')
+      .eq('user_id', user.id)
 
-    if (filtered.length < 2) {
-      setMessage('⚠️ Not enough new portfolios available. Showing from previous pool.')
+    const reviewedIds = new Set<number>()
+    reviewed?.forEach((r) => {
+      if (r.left_portfolio_id) reviewedIds.add(r.left_portfolio_id)
+      if (r.right_portfolio_id) reviewedIds.add(r.right_portfolio_id)
+    })
+
+    const { data: portfolios, error } = await supabase
+      .from('portfolios')
+      .select('*')
+      .neq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(100)
+
+    if (error || !portfolios || portfolios.length < 2) {
+      setMessage('⚠️ Not enough portfolios available for review.')
+      setLoading(false)
+      return
+    }
+
+    const filtered = portfolios.filter(
+      (p) => !reviewedIds.has(p.id) && !prevIds.includes(p.id)
+    )
+
+    if (filtered.length < 2 && portfolios.length >= 2) {
+      setMessage('⚠️ No new portfolios left, showing from previous pool.')
     }
 
     const pool = filtered.length >= 2 ? filtered : portfolios
@@ -49,8 +73,10 @@ export default function ReviewArenaPage() {
     const left = shuffled[0]
     let right = shuffled[1]
 
-    if (left.id === right.id && shuffled.length > 2) {
-      right = shuffled[2]
+    if (!left || !right || left.id === right.id) {
+      setMessage('⚠️ Could not find two distinct portfolios. Try again later.')
+      setLoading(false)
+      return
     }
 
     setSelected({ left, right })
@@ -67,95 +93,101 @@ export default function ReviewArenaPage() {
   }, [])
 
   const handleSubmitReview = async () => {
-  if (
-    !selected.left ||
-    !selected.right ||
-    scoreLeft === null ||
-    scoreRight === null ||
-    feedback.trim() === ''
-  ) {
-    setMessage('Please provide scores for both portfolios and leave feedback.')
-    return
-  }
+    if (
+      !selected.left ||
+      !selected.right ||
+      scoreLeft === null ||
+      scoreRight === null ||
+      feedback.trim() === ''
+    ) {
+      setMessage('Please provide scores for both portfolios and leave feedback.')
+      return
+    }
 
-  setSubmitting(true)
-  setMessage('')
+    setSubmitting(true)
+    setMessage('')
 
-  const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    const user = userData?.user
 
-  if (!user) {
-    setMessage('⚠️ You must be logged in to submit a review.')
+    if (userError || !user) {
+      setMessage('⚠️ You must be logged in to submit a review.')
+      setSubmitting(false)
+      return
+    }
+
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const { count: reviewCountToday } = await supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', todayStart.toISOString())
+
+    let xp = 0
+    const trimmedFeedback = feedback.trim()
+    if (trimmedFeedback.length > 300) xp += 30
+    else if (trimmedFeedback.length > 150) xp += 20
+    else if (trimmedFeedback.length > 50) xp += 10
+
+    if (scoreLeft !== null && scoreRight !== null) xp += 10
+
+    const todayCount = reviewCountToday ?? 0
+    if (todayCount <= 3) xp += 10
+    else if (todayCount <= 5) xp += 5
+
+    const { error: reviewError } = await supabase.from('reviews').insert({
+      user_id: user.id,
+      left_portfolio_id: selected.left.id,
+      right_portfolio_id: selected.right.id,
+      score_left: scoreLeft,
+      score_right: scoreRight,
+      feedback: trimmedFeedback,
+      xp: xp,
+    })
+
+    if (reviewError) {
+      setMessage('❌ Failed to submit review.')
+      setSubmitting(false)
+      return
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('xp')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profileError || !profileData) {
+      setMessage('✅ Review submitted, but failed to fetch profile XP.')
+      setSubmitting(false)
+      return
+    }
+
+    const currentXP = profileData.xp || 0
+    const newXP = currentXP + xp
+
+    const { error: xpUpdateError } = await supabase
+      .from('profiles')
+      .update({ xp: newXP })
+      .eq('user_id', user.id)
+
+    if (xpUpdateError) {
+      setMessage('✅ Review submitted, but XP update failed.')
+    } else {
+      setMessage(`✅ Review submitted! You earned ${xp} XP 🎉`)
+    }
+
     setSubmitting(false)
-    return
+    fetchTwoPortfolios([selected.left.id, selected.right.id])
   }
-
-  // Step 1: Count reviews submitted today
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-
-  const { count: reviewCountToday } = await supabase
-    .from('reviews')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('created_at', todayStart.toISOString())
-
-  // Step 2: XP Calculation
-  let xp = 0
-  const trimmedFeedback = feedback.trim()
-
-  if (trimmedFeedback.length > 300) xp += 30
-  else if (trimmedFeedback.length > 150) xp += 20
-  else if (trimmedFeedback.length > 50) xp += 10
-
-  if (scoreLeft !== null && scoreRight !== null) xp += 10
-
-  const todayCount = reviewCountToday ?? 0
-  if (todayCount <= 3) xp += 10
-  else if (todayCount <= 5) xp += 5
-
-  // Step 3: Insert review
-  const { error: reviewError } = await supabase.from('reviews').insert({
-    user_id: user.id,
-    left_portfolio_id: selected.left.id,
-    right_portfolio_id: selected.right.id,
-    score_left: scoreLeft,
-    score_right: scoreRight,
-    feedback: trimmedFeedback,
-    xp: xp,
-  })
-
-  if (reviewError) {
-    console.error('Review insert error:', reviewError)
-    setMessage('❌ Failed to submit review.')
-    setSubmitting(false)
-    return
-  }
-
-  // Step 4: Update user XP in profiles table using RPC
-if (user?.id) {
-  const { error: updateError } = await supabase.rpc('increment_xp', {
-    uid: user.id,
-    points: xp,
-  })
-
-  if (updateError) {
-    console.error("XP RPC error:", updateError)
-    setMessage('✅ Review submitted, but failed to update XP.')
-  } else {
-    setMessage(`✅ Review submitted! You earned ${xp} XP 🎉`)
-  }
-  } else {
-    console.warn("User ID not found for XP update.")
-    setMessage('✅ Review submitted, but no XP awarded due to user issue.')
-  }
-
-  setSubmitting(false)
-  fetchTwoPortfolios(previousIds)
-}
 
   const handleSkip = () => {
     fetchTwoPortfolios(previousIds)
   }
+
+  const hideReviewUI = message.includes('Not enough portfolios') || message.includes('Try again later')
 
   return (
     <DashboardLayout>
@@ -195,7 +227,7 @@ if (user?.id) {
           </div>
         )}
 
-        {!loading && (
+        {!loading && !hideReviewUI && (
           <>
             <div className="max-w-5xl mx-auto mt-10">
               <label htmlFor="feedback" className="block mb-2 text-sm font-semibold">
