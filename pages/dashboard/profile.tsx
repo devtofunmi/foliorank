@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import DashboardLayout from '@/components/DashboardLayout'
 import { supabase } from '@/lib/supabase'
+import Spinner from '@/components/Spinner'
 
 type Portfolio = {
   id: number
@@ -96,7 +97,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <main className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center font-inter">
-        <p>Loading profile...</p>
+        <div className='flex justify-center'><Spinner /></div>
       </main>
     )
   }
