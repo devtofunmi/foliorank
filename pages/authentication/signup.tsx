@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff } from 'lucide-react'
+import Spinner from '@/components/Spinner'
 
 function isValidEmail(email: string): boolean {
   return /\S+@\S+\.\S+/.test(email)
@@ -124,7 +125,7 @@ export default function SignupPage() {
               : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
           }`}
         >
-          {loading ? 'Signing up...' : 'Sign Up'}
+          {loading ? <div className='flex justify-center'><Spinner /></div> : 'Sign Up'}
         </button>
 
         <p className="text-center mt-5 text-sm text-gray-400">
