@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import Spinner from '@/components/Spinner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -60,7 +61,7 @@ export default function LoginPage() {
               : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
           }`}
         >
-          {loading ? 'Logging in...' : 'Log In'}
+          {loading ?<div className='flex justify-center'><Spinner /></div>  : 'Log In'}
         </button>
 
         <p className="text-center mt-5 text-sm text-gray-400">
