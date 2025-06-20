@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import Spinner from '@/components/Spinner'
 
 type Portfolio = {
   id: number
@@ -99,7 +100,7 @@ export default function UserPortfolios() {
   if (loading) {
     return (
       <div className="text-white min-h-screen flex justify-center items-center bg-black">
-        Loading your portfolios...
+       <div className='flex justify-center'><Spinner /></div>
       </div>
     )
   }
