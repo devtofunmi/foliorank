@@ -1,18 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
 
 type UserSettings = {
   name: string
   email: string
-}
-
-const mockSettings: UserSettings = {
-  name: 'Jane Doe',
-  email: 'jane.doe@example.com',
 }
 
 export default function SettingsPage() {
@@ -22,33 +17,88 @@ export default function SettingsPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setTimeout(() => {
-      setSettings(mockSettings)
-    }, 400)
+    const fetchSettings = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getUser()
+      const user = sessionData?.user
+      if (!user) return
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError.message)
+        return
+      }
+
+      setSettings({
+        name: profile.username,
+        email: user.email ?? '',
+      })
+    }
+
+    fetchSettings()
   }, [])
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setSettings((prev) => prev ? { ...prev, [name]: value } : prev)
+    setSettings((prev) => (prev ? { ...prev, [name]: value } : prev))
   }
 
-  function handlePasswordChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setPassword((prev) => ({ ...prev, [name]: value }))
   }
 
-  function handleSave() {
+  const handleSave = async () => {
     setError('')
-    if (password.newPass !== password.confirm) {
-      setError('❌ Passwords do not match.')
-      return
+    setMessage('')
+
+    if (!settings) return
+
+    // Update name in profiles table
+    const { data: sessionData } = await supabase.auth.getUser()
+    const user = sessionData?.user
+    if (!user) return
+
+    if (settings.name) {
+      await supabase
+        .from('profiles')
+        .update({ username: settings.name })
+        .eq('user_id', user.id)
     }
 
-    // Simulate save
-    setTimeout(() => {
-      setMessage('✅ Settings updated successfully!')
-      setPassword({ current: '', newPass: '', confirm: '' })
-    }, 500)
+    //  Handle password update
+    if (password.newPass) {
+      if (password.newPass !== password.confirm) {
+        setError('❌ Passwords do not match.')
+        return
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: settings.email,
+        password: password.current,
+      })
+
+      if (signInError) {
+        setError('❌ Incorrect current password.')
+        return
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password.newPass,
+      })
+
+      if (updateError) {
+        setError('Failed to update password.')
+        return
+      }
+    }
+
+    setMessage('Settings updated successfully!')
+    setPassword({ current: '', newPass: '', confirm: '' })
   }
 
   if (!settings) {
@@ -85,8 +135,8 @@ export default function SettingsPage() {
             name="email"
             placeholder="Email"
             value={settings.email}
-            onChange={handleInputChange}
-            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-white"
+            disabled
+            className="w-full mt-3 text-center rounded-full mb-3 px-4 py-4 bg-[#1c1c1c] border border-[#333] text-zinc-500 cursor-not-allowed"
           />
 
           <input
@@ -130,4 +180,3 @@ export default function SettingsPage() {
     </DashboardLayout>
   )
 }
-
