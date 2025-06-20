@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Spinner from './Spinner'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -77,7 +78,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        Loading...
+        <div className='flex justify-center'><Spinner /></div>
       </div>
     )
   }
