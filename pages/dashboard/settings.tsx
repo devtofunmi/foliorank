@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import Spinner from '@/components/Spinner'
 
 type UserSettings = {
   name: string
@@ -104,7 +105,7 @@ export default function SettingsPage() {
   if (!settings) {
     return (
       <main className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center font-inter">
-        <p>Loading settings...</p>
+        <div className='flex justify-center'><Spinner /></div>
       </main>
     )
   }
