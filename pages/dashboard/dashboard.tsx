@@ -112,7 +112,7 @@ export default function DashboardPage() {
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="mt-2 text-sm text-zinc-400">Next Rank at 1,500 XP</p>
+        {/* <p className="mt-2 text-sm text-zinc-400">Next Rank at 1,500 XP</p> */}
       </div>
     </DashboardLayout>
   )
