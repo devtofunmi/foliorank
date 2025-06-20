@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import DashboardLayout from '@/components/DashboardLayout'
+import Spinner from '@/components/Spinner'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -232,7 +233,7 @@ export default function SubmitPortfolioPage() {
                 : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
             }`}
           >
-            {loading ? 'Submitting...' : 'Submit Portfolio'}
+            {loading ? <div className='flex justify-center'><Spinner /></div> : 'Submit Portfolio'}
           </button>
         </div>
       </main>
