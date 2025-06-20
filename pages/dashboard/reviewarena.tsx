@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import DashboardLayout from '@/components/DashboardLayout'
 import { supabase } from '@/lib/supabase'
+import Spinner from '@/components/Spinner'
 
 type Portfolio = {
   id: number
@@ -217,7 +218,7 @@ export default function ReviewArenaPage() {
         {message && <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>}
 
         {loading ? (
-          <p className="text-center text-zinc-400">Loading portfolios...</p>
+          <div className='flex justify-center'><Spinner /></div>
         ) : (
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
             {selected.left && (
