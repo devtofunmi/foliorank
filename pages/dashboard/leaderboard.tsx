@@ -164,7 +164,7 @@ export default function LeaderboardPage() {
 
         {/* CTA Button */}
         <div className="text-center mt-12">
-          <Link href="/dashboard">
+          <Link href="/dashboard/dashboard">
             <button className="px-6 py-3 cursor-pointer rounded-xl font-semibold bg-[#FF007F] hover:bg-[#e60073] text-white transition duration-300">
               🚀 Go to Dashboard
             </button>
