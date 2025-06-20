@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import Spinner from '@/components/Spinner'
 
 const avatarSeeds = ['froggy', 'jelly', 'rocket', 'paws', 'zappy', 'Easton', 'lunar', 'storm']
 const avatarUrls = avatarSeeds.map(
@@ -144,7 +145,7 @@ export default function SetupPage() {
               : 'bg-[#FF007F] hover:bg-[#e60073] cursor-pointer'
           }`}
         >
-          {loading ? 'Saving...' : 'Save & Continue'}
+          {loading ? <div className='flex justify-center'><Spinner /></div>: 'Save & Continue'}
         </button>
       </div>
     </main>
