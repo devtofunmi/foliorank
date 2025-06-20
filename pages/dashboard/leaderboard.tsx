@@ -14,10 +14,10 @@ type LeaderboardEntry = {
   xp: number
 }
 
-const tabs = ['All Time', 'Monthly', 'Weekly'] as const
-
 type TabKey = 'allTime' | 'monthly' | 'weekly'
-type TabLabel = typeof tabs[number]
+type TabLabel = 'All Time' | 'Monthly' | 'Weekly'
+
+const tabs: TabLabel[] = ['All Time', 'Monthly', 'Weekly']
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<TabLabel>('All Time')
@@ -32,34 +32,24 @@ export default function LeaderboardPage() {
       const { data, error } = await supabase.rpc('get_leaderboard')
       if (error || !data) return
 
-      const allTime = data
-        .sort((a, b) => b.total_xp - a.total_xp)
-        .map((entry, i) => ({
-          rank: i + 1,
-          username: entry.username || 'Anonymous',
-          avatar_url: entry.avatar_url,
-          xp: entry.total_xp,
-        }))
+      // Don't filter anyone out (even those with 0 XP)
+      const mapData = (
+        key: 'total_xp' | 'month_xp' | 'week_xp'
+      ): LeaderboardEntry[] =>
+        data
+          .sort((a: any, b: any) => b[key] - a[key])
+          .map((entry: any, i: number) => ({
+            rank: i + 1,
+            username: entry.username || 'Anonymous',
+            avatar_url: entry.avatar_url,
+            xp: entry[key],
+          }))
 
-      const monthly = data
-        .sort((a, b) => b.month_xp - a.month_xp)
-        .map((entry, i) => ({
-          rank: i + 1,
-          username: entry.username || 'Anonymous',
-          avatar_url: entry.avatar_url,
-          xp: entry.month_xp,
-        }))
-
-      const weekly = data
-        .sort((a, b) => b.week_xp - a.week_xp)
-        .map((entry, i) => ({
-          rank: i + 1,
-          username: entry.username || 'Anonymous',
-          avatar_url: entry.avatar_url,
-          xp: entry.week_xp,
-        }))
-
-      setLeaderboardData({ allTime, monthly, weekly })
+      setLeaderboardData({
+        allTime: mapData('total_xp'),
+        monthly: mapData('month_xp'),
+        weekly: mapData('week_xp'),
+      })
     }
 
     fetchLeaderboard()
@@ -71,13 +61,12 @@ export default function LeaderboardPage() {
       'Monthly': 'monthly',
       'Weekly': 'weekly',
     }
-    const key = keyMap[activeTab]
-    return leaderboardData[key] ?? []
+    return leaderboardData[keyMap[activeTab]] ?? []
   }
 
   return (
     <DashboardLayout>
-      <main className="min-h-screen bg-[#0a0a0a] text-white font-inter ">
+      <main className="min-h-screen bg-[#0a0a0a] text-white font-inter">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <motion.h1
             className="text-2xl md:text-6xl font-extrabold text-[#00FFF7] mb-4"
@@ -117,7 +106,7 @@ export default function LeaderboardPage() {
         {/* Leaderboard List */}
         <motion.div
           key={activeTab}
-          className="bg-[#111111] rounded-2xl shadow-xl p-6  border border-[#2a2a2a] max-w-3xl mx-auto"
+          className="bg-[#111111] rounded-2xl shadow-xl p-6 border border-[#2a2a2a] max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -133,12 +122,10 @@ export default function LeaderboardPage() {
           ) : (
             getData().map((user) => (
               <motion.div
-                key={user.rank + user.username}
+                key={`${user.rank}-${user.username}`}
                 className={`grid grid-cols-3 my-3 py-3 px-2 rounded-xl items-center ${
                   user.rank <= 3
                     ? 'bg-gradient-to-r from-[#1A1AFF]/20 via-[#FF007F]/10 to-[#00FFF7]/10'
-                    : user.xp === 0
-                    ? 'opacity-50 italic'
                     : 'hover:bg-white/5'
                 } transition`}
                 whileHover={{ scale: 1.015 }}
@@ -147,7 +134,7 @@ export default function LeaderboardPage() {
 
                 <div className="flex items-center gap-3">
                   <img
-                    src={user.avatar_url || `/default-avatar.png`}
+                    src={user.avatar_url || '/default-avatar.png'}
                     alt={user.username}
                     width={36}
                     height={36}
