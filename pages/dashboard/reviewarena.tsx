@@ -249,16 +249,16 @@ export default function ReviewArenaPage() {
             <button
               onClick={handleSubmitReview}
               disabled={submitting}
-              className="px-6 py-3 bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
+              className="md:px-6 px-4 py-3 cursor-pointer bg-[#FF007F] rounded-xl font-semibold text-white hover:bg-[#e60073] transition disabled:opacity-50"
             >
-              {submitting ? 'Submitting...' : 'Submit Review & Earn XP'}
+              {submitting ? <div className='flex justify-center'><Spinner /></div> : 'Submit Review & Earn XP'}
             </button>
             <button
               onClick={handleSkip}
               disabled={loading}
-              className="px-6 py-3 bg-[#333] rounded-xl font-semibold text-white hover:bg-[#444] transition disabled:opacity-50"
+              className="md:px-6 px-4 py-3 cursor-pointer bg-[#333] rounded-xl font-semibold text-white hover:bg-[#444] transition disabled:opacity-50"
             >
-              Skip This Pair
+              Skip
             </button>
           </div>
         )}
