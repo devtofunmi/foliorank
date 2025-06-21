@@ -18,6 +18,8 @@ export default function ReviewArenaPage() {
   const [selected, setSelected] = useState<{ left?: Portfolio; right?: Portfolio }>({})
   const [scoreLeft, setScoreLeft] = useState<number | null>(null)
   const [scoreRight, setScoreRight] = useState<number | null>(null)
+  const [leftScoreError, setLeftScoreError] = useState<string | null>(null)
+  const [rightScoreError, setRightScoreError] = useState<string | null>(null)
   const [leftFeedback, setLeftFeedback] = useState('')
   const [rightFeedback, setRightFeedback] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -98,6 +100,8 @@ export default function ReviewArenaPage() {
     setScoreRight(null)
     setLeftFeedback('')
     setRightFeedback('')
+    setLeftScoreError(null)
+    setRightScoreError(null)
     setMessage('')
     setPreviousIds([left.id, right.id])
     setLoading(false)
@@ -108,15 +112,31 @@ export default function ReviewArenaPage() {
   }, [])
 
   const handleSubmitReview = async () => {
+    if (scoreLeft === null || scoreLeft < 0 || scoreLeft > 10) {
+      setLeftScoreError('Score must be between 0 and 10')
+    } else {
+      setLeftScoreError(null)
+    }
+
+    if (scoreRight === null || scoreRight < 0 || scoreRight > 10) {
+      setRightScoreError('Score must be between 0 and 10')
+    } else {
+      setRightScoreError(null)
+    }
+
     if (
       !selected.left ||
       !selected.right ||
       scoreLeft === null ||
       scoreRight === null ||
+      scoreLeft < 0 ||
+      scoreLeft > 10 ||
+      scoreRight < 0 ||
+      scoreRight > 10 ||
       leftFeedback.trim() === '' ||
       rightFeedback.trim() === ''
     ) {
-      setMessage('Please score and give feedback for both portfolios.')
+      setMessage('Please score (0–10) and give feedback for both portfolios.')
       return
     }
 
@@ -215,7 +235,7 @@ export default function ReviewArenaPage() {
           ⚔️ Review Arena
         </motion.h1>
 
-        {message && <p className="mb-6 text-center text-sm text-zinc-400">{message}</p>}
+        {message && <p className="mb-6 text-red-600 text-center text-sm">{message}</p>}
 
         {loading ? (
           <div className='flex justify-center'><Spinner /></div>
@@ -225,9 +245,14 @@ export default function ReviewArenaPage() {
               <PortfolioCard
                 portfolio={selected.left}
                 score={scoreLeft}
-                onScoreChange={setScoreLeft}
+                onScoreChange={(val) => {
+                  setScoreLeft(val)
+                  if (val < 0 || val > 10) setLeftScoreError('Score must be between 0 and 10')
+                  else setLeftScoreError(null)
+                }}
                 feedback={leftFeedback}
                 onFeedbackChange={setLeftFeedback}
+                scoreError={leftScoreError}
                 side="left"
               />
             )}
@@ -235,9 +260,14 @@ export default function ReviewArenaPage() {
               <PortfolioCard
                 portfolio={selected.right}
                 score={scoreRight}
-                onScoreChange={setScoreRight}
+                onScoreChange={(val) => {
+                  setScoreRight(val)
+                  if (val < 0 || val > 10) setRightScoreError('Score must be between 0 and 10')
+                  else setRightScoreError(null)
+                }}
                 feedback={rightFeedback}
                 onFeedbackChange={setRightFeedback}
+                scoreError={rightScoreError}
                 side="right"
               />
             )}
@@ -273,10 +303,19 @@ type PortfolioCardProps = {
   onScoreChange: (score: number) => void
   feedback: string
   onFeedbackChange: (text: string) => void
+  scoreError?: string | null
   side: 'left' | 'right'
 }
 
-function PortfolioCard({ portfolio, score, onScoreChange, feedback, onFeedbackChange, side }: PortfolioCardProps) {
+function PortfolioCard({
+  portfolio,
+  score,
+  onScoreChange,
+  feedback,
+  onFeedbackChange,
+  scoreError,
+  side,
+}: PortfolioCardProps) {
   return (
     <motion.div
       className="flex-1 bg-[#111111] rounded-2xl p-6 border border-[#2a2a2a] shadow-lg flex flex-col"
@@ -313,8 +352,13 @@ function PortfolioCard({ portfolio, score, onScoreChange, feedback, onFeedbackCh
         max={10}
         value={score ?? ''}
         onChange={(e) => onScoreChange(Number(e.target.value))}
-        className="w-full px-3 py-2 mb-4 rounded bg-[#1c1c1c] border border-[#333] text-white focus:outline-none focus:ring-2 focus:ring-[#FF007F]"
+        className={`w-full px-3 py-2 mb-1 rounded bg-[#1c1c1c] border ${
+          scoreError ? 'border-red-500' : 'border-[#333]'
+        } text-white focus:outline-none focus:ring-2 ${
+          scoreError ? 'focus:ring-red-500' : 'focus:ring-[#FF007F]'
+        }`}
       />
+      {scoreError && <p className="text-red-500 text-sm mb-3">{scoreError}</p>}
 
       <label className="block mb-1 font-semibold">Your Feedback:</label>
       <textarea
