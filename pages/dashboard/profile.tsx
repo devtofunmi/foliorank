@@ -115,11 +115,11 @@ export default function ProfilePage() {
 
         {/* XP and Rank */}
         <section className="mb-12 flex justify-center gap-12 text-center">
-          <div className="bg-[#111111] rounded-xl p-6 w-40 shadow-lg border border-[#222]">
+          <div className="bg-[#111111] rounded-xl p-3 md:p-6 w-32 md:w-40 shadow-lg border border-[#222]">
             <h3 className="text-lg font-semibold mb-2">XP</h3>
             <p className="text-3xl text-[#FF007F]">{user.xp.toLocaleString()}</p>
           </div>
-          <div className="bg-[#111111] rounded-xl p-6 w-40 shadow-lg border border-[#222]">
+          <div className="bg-[#111111] rounded-xl p-3 md:p-6 w-32 md:w-40 shadow-lg border border-[#222]">
             <h3 className="text-lg font-semibold mb-2">Rank</h3>
             <p className="text-3xl text-[#00FFF7]">#{user.rank}</p>
           </div>
