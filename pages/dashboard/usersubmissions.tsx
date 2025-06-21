@@ -13,6 +13,7 @@ type Portfolio = {
   niche: string
   image?: string | null
   created_at: string
+  user_id?: string
 }
 
 export default function UserPortfolios() {
@@ -25,44 +26,53 @@ export default function UserPortfolios() {
     niche: '',
   })
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [successMessage, setSuccessMessage] = useState('')
+
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchPortfolios = async () => {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+  const fetchPortfolios = async () => {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-      if (authError || !user) {
-        router.push('/authentication/login')
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('portfolios')
-        .select('id, title, link, niche, image, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setPortfolios(data)
-      }
-
-      setLoading(false)
+    if (authError || !user) {
+      router.push('/authentication/login')
+      return
     }
 
-    fetchPortfolios()
-  }, [router])
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select('id, title, link, niche, image, created_at, user_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
 
-  const handleDelete = async (id: number) => {
-    const confirm = window.confirm('Are you sure you want to delete this portfolio?')
-    if (!confirm) return
+    if (!error && data) {
+      setPortfolios(data)
+    } else {
+      console.error('Fetch error:', error)
+    }
+  }
 
-    const { error } = await supabase.from('portfolios').delete().eq('id', id)
+  useEffect(() => {
+    fetchPortfolios().finally(() => setLoading(false))
+  }, [])
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+
+    const { error } = await supabase.from('portfolios').delete().eq('id', deleteId)
 
     if (!error) {
-      setPortfolios((prev) => prev.filter((p) => p.id !== id))
+      await fetchPortfolios()
+      setShowDeleteModal(false)
+      setDeleteId(null)
+      setSuccessMessage('Portfolio deleted successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } else {
+      console.error('Delete error:', error)
     }
   }
 
@@ -100,17 +110,25 @@ export default function UserPortfolios() {
   if (loading) {
     return (
       <div className="text-white min-h-screen flex justify-center items-center bg-black">
-       <div className='flex justify-center'><Spinner /></div>
+        <div className="flex justify-center"><Spinner /></div>
       </div>
     )
   }
 
   return (
     <DashboardLayout>
-      <div className="text-white min-h-screen px-4 bg-[#0a0a0a]">
+      <div className="text-white min-h-screen px-4 bg-[#0a0a0a] relative">
         <h1 className="md:text-3xl text-2xl font-bold mb-6 text-center text-[#00FFF7]">
           My Portfolios
         </h1>
+
+        {/* Success Toast */}
+        {successMessage && (
+          <div className="fixed top-6 right-6 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
+            {successMessage}
+          </div>
+        )}
+
         {portfolios.length === 0 ? (
           <div className="text-gray-400 text-center mt-20">
             You haven’t submitted any portfolio yet.
@@ -185,7 +203,10 @@ export default function UserPortfolios() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(portfolio.id)}
+                        onClick={() => {
+                          setDeleteId(portfolio.id)
+                          setShowDeleteModal(true)
+                        }}
                         className="bg-red-600 cursor-pointer hover:bg-red-700 px-3 py-1 rounded text-sm"
                       >
                         Delete
@@ -195,6 +216,30 @@ export default function UserPortfolios() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-70 flex items-center justify-center">
+            <div className="bg-[#1a1a1a] text-white rounded-lg p-6 max-w-sm w-4/5 shadow-lg">
+              <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+              <p className="mb-6">Are you sure you want to delete this portfolio?</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-2 py-1 text-sm cursor-pointer rounded bg-gray-700 hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-2 py-1 text-sm cursor-pointer rounded bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
