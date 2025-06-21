@@ -51,64 +51,54 @@ export default function DashboardPage() {
   const [reviewCount, setReviewCount] = useState(0)
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
+  const fetchStats = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
 
-      const userId = user.id
+    const userId = user.id
 
-      // Get profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, xp')
-        .eq('user_id', userId)
-        .single()
+    // Get profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username, xp')
+      .eq('user_id', userId)
+      .single()
 
-      const currentXp = profile?.xp || 0
-      const currentUsername = profile?.username || 'Creator'
-      setUsername(currentUsername)
-      setXp(currentXp)
+    const currentXp = profile?.xp || 0
+    const currentUsername = profile?.username || 'Creator'
+    setUsername(currentUsername)
+    setXp(currentXp)
 
-      // Get user's portfolios
-      const { data: portfolios } = await supabase
-        .from('portfolios')
+    // Get user's portfolios
+    const { data: portfolios } = await supabase
+      .from('portfolios')
+      .select('id')
+      .eq('user_id', userId)
+
+    const portfolioIds = portfolios?.map((p) => p.id) || []
+
+    // Count reviews received from enriched_reviews
+    if (portfolioIds.length > 0) {
+      const { data: enrichedReviews } = await supabase
+        .from('enriched_reviews')
         .select('id')
-        .eq('user_id', userId)
+        .in('left_portfolio_id', portfolioIds)
 
-      const portfolioIds = portfolios?.map((p) => p.id) || []
-
-      // Count reviews from both left and right portfolio references
-      let count = 0
-      if (portfolioIds.length > 0) {
-        const { data: leftReviews } = await supabase
-          .from('reviews')
-          .select('id')
-          .in('left_portfolio', portfolioIds)
-
-        const { data: rightReviews } = await supabase
-          .from('reviews')
-          .select('id')
-          .in('right_portfolio', portfolioIds)
-
-        const uniqueIds = new Set([
-          ...(leftReviews?.map((r) => r.id) || []),
-          ...(rightReviews?.map((r) => r.id) || []),
-        ])
-        count = uniqueIds.size
-      }
-      setReviewCount(count)
-
-      // Get rank from leaderboard
-      const { data: leaderboard } = await supabase.rpc('get_leaderboard')
-      const sorted = leaderboard?.sort((a: any, b: any) => b.total_xp - a.total_xp)
-      const userRank = sorted?.findIndex((entry: any) => entry.user_id === userId) ?? -1
-      setRank(userRank >= 0 ? userRank + 1 : null)
+      setReviewCount(enrichedReviews?.length || 0)
     }
 
-    fetchStats()
-  }, [])
+    // Get rank from leaderboard
+    const { data: leaderboard } = await supabase.rpc('get_leaderboard')
+    const sorted = leaderboard?.sort((a: any, b: any) => b.total_xp - a.total_xp)
+    const userRank = sorted?.findIndex((entry: any) => entry.user_id === userId) ?? -1
+    setRank(userRank >= 0 ? userRank + 1 : null)
+  }
+
+  fetchStats()
+}, [])
+
 
   const { xpNeeded, progressPercent } = getNextRankInfo(xp)
 
