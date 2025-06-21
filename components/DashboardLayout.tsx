@@ -143,7 +143,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col">
         {/* Top Navbar */}
         <header className="w-full flex items-center justify-between px-4 md:px-10 py-4 border-b border-[#2a2a2a] bg-[#0a0a0a] sticky top-0 z-30">
-          <div className="md:hidden cursor-pointer">
+          <div className="md:hidden flex items-center justify-center cursor-pointer">
             <button onClick={() => setSidebarOpen(!sidebarOpen)}>
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
