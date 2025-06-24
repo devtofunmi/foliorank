@@ -7,7 +7,7 @@ import { CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import Spinner from '@/components/Spinner'
 
-const avatarSeeds = ['froggy', 'jelly', 'rocket', 'paws', 'zappy', 'Easton', 'lunar', 'storm']
+const avatarSeeds = ['froggy', 'Ryker', 'rocket', 'paws', 'zappy', 'Easton', 'lunar', 'storm']
 const avatarUrls = avatarSeeds.map(
   (seed) =>
     `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundType=gradientLinear&backgroundColor=ff007f,00fff7`
